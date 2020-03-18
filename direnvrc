@@ -5,6 +5,13 @@ use_nix() {
   local path
   path="$(nix-instantiate --find-file nixpkgs)"
 
+  local keep_args
+  keep_args=()
+
+  for var in "${NIX_SHELL_KEEP_ENV}"; do
+      keep_args+=(--keep "$var")
+  done
+
   if [[ "${direnv:-}" == "" ]]; then
     log_status "\$direnv environment variable was not defined. Was this script run inside direnv?"
   fi
@@ -35,7 +42,7 @@ use_nix() {
     [[ -d .direnv ]] || mkdir .direnv
     local dump_cmd tmp
     dump_cmd="echo -n _____direnv_____; \"$direnv\" dump bash"
-    tmp=$(nix-shell --show-trace --pure "$@" --run "$dump_cmd" \
+    tmp=$(nix-shell --show-trace --pure "$@" --run "$dump_cmd" "${keep_args[@]}" \
               | grep -oP '(?<=_____direnv_____).*')
     echo "$tmp" > "$cache"
     update_drv=1
